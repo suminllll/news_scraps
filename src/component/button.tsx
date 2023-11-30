@@ -1,7 +1,39 @@
-import React from "react";
+interface ButtonList {
+  item: { text: string; icon?: React.ReactNode }
+  onClick: (value: string) => void
+  buttonStyle: {
+    color: string
+    backColor: string
+    borderColor: string
+  }
+}
 
-const Button = () => {
-  return <div></div>;
-};
+import React, { useState } from 'react'
+import { styled } from 'styled-components'
 
-export default Button;
+const Button = ({ item, onClick, buttonStyle }: ButtonList) => {
+  return (
+    <>
+      <ButtonWrapper onClick={() => onClick(item.text)} buttonStyle={buttonStyle} type="button">
+        {item.icon && <IconWrapper>{item.icon}</IconWrapper>}
+        {item.text}
+      </ButtonWrapper>
+    </>
+  )
+}
+
+const ButtonWrapper = styled.button<{ buttonStyle: ButtonList['buttonStyle'] }>`
+  display: flex;
+  color: ${({ buttonStyle }) => buttonStyle.color};
+  background-color: ${({ buttonStyle }) => buttonStyle.backColor};
+  height: 34px;
+  padding: 8px 11px 6px 11px;
+  border-radius: 30px;
+  border: ${({ buttonStyle }) => buttonStyle.borderColor && `1px solid ${buttonStyle.borderColor}`};
+`
+
+const IconWrapper = styled.div`
+  margin-top: 1px;
+  margin-right: 4px;
+`
+export default Button
