@@ -1,7 +1,7 @@
 import React from 'react'
 import { styled } from 'styled-components'
-import StarOnIcon from '~/assets/icons/star_on_ico.svg'
-import StarOffIcon from '~/assets/icons/star_off_ico.svg'
+import StarOnIcon from '~/assets/icons/ico_star_on.svg'
+import StarOffIcon from '~/assets/icons/ico_star_off.svg'
 import { SpaceBetween } from '~/styles/common'
 
 const ContentsList = ({ contentsList }: ContentsList) => {

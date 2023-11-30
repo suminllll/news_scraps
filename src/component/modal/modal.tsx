@@ -10,7 +10,7 @@ type Form = {
 import { styled } from 'styled-components'
 import Button from '../button'
 import { useEffect, useRef, useState } from 'react'
-import CalenderIcon from '~/assets/icons/calender_ico.svg'
+import CalenderIcon from '~/assets/icons/ico_calender.svg'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { setCookie } from '~/utils/cookies'
@@ -81,7 +81,7 @@ const FilterModal = ({ onClose }: ModalProps) => {
     onClose()
   }
   useEffect(() => {
-    //console.log({ form })
+    console.log({ form })
   }, [form])
 
   return (
@@ -118,7 +118,6 @@ const FilterModal = ({ onClose }: ModalProps) => {
           <ButtonContainer>
             {tagList.map((item) => (
               <Button
-                name="tagSelectedList"
                 item={item}
                 key={item.text}
                 buttonStyle={tagSelectedList.includes(item.text) ? selectTagColor : normalTagColor}
