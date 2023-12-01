@@ -1,28 +1,40 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { styled } from 'styled-components'
 import StarOnIcon from '~/assets/icons/ico_star_on.svg'
 import StarOffIcon from '~/assets/icons/ico_star_off.svg'
 import { SpaceBetween } from '~/styles/common'
+import { useRouter } from 'next/router'
 
-const ContentsList = ({ contentsList }: ContentsList) => {
+const ContentsList = ({ contentsList, ref }: ContentsList) => {
+  const router = useRouter()
+  //star list 만들어서 넣고 빼고
   return (
     <>
       <ContentsContainer>
         {contentsList.map((item) => (
-          <ContentsBox key={item.title}>
+          <ContentsBox key={item._ID} onClick={() => router.push(`${item.web_url}`)}>
             <div style={{ display: 'flex', marginBottom: 8 }}>
-              <ContentsTitle>{item.title}</ContentsTitle>
-              <IconWrapper>{item.isStar ? <StarOnIcon /> : <StarOffIcon />}</IconWrapper>
+              <ContentsTitle>{item.headLine}</ContentsTitle>
+              {item.isStar ? (
+                <IconWrapper>
+                  <StarOnIcon />
+                </IconWrapper>
+              ) : (
+                <IconWrapper>
+                  <StarOffIcon />
+                </IconWrapper>
+              )}
             </div>
             <ContentsBottomBox>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span>{item.attached}</span>
-                <span>{item.name} 기자</span>
+                <span>{item.source}</span>
+                <span>{item.byline}</span>
               </div>
               <p>{item.date}</p>
             </ContentsBottomBox>
           </ContentsBox>
         ))}
+        <div ref={ref}></div>
       </ContentsContainer>
     </>
   )

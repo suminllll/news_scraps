@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
+import { Provider } from 'react-redux'
+import store from '~/redux/store'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const queryClient = new QueryClient({
@@ -15,9 +17,11 @@ function MyApp({ Component, pageProps }: AppProps) {
   })
   return (
     <>
-      <QueryClientProvider client={queryClient}>
-        <Component {...pageProps} />
-      </QueryClientProvider>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <Component {...pageProps} />
+        </QueryClientProvider>
+      </Provider>
     </>
   )
 }

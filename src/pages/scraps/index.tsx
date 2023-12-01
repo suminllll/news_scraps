@@ -10,11 +10,27 @@ import FilterModal from '~/component/modal/modal'
 import { ButtonContainer } from '~/styles/common'
 import ScrapsBigIcon from '~/assets/icons/ico_scraps_big.svg'
 import { useRouter } from 'next/router'
+import { RootState } from '~/redux/store'
+import { useDispatch, useSelector } from 'react-redux'
+import { FilterForm } from '~/types/modal'
+import { setScrapFilterModal } from '~/redux/scrapModal'
+import { modalStatus } from '~/redux/modalStatus'
 
 const ScrapsScreen = () => {
   const [modalOpen, setModalOpen] = useState<boolean>(false)
   const [innerHeight, setInnerHeight] = useState(0)
   const router = useRouter()
+  const dispatch = useDispatch()
+  const { selectedDate, tagSelectedList, headLineInputValue } = useSelector(
+    (state: RootState) => state.filterScrapModal,
+  )
+  const { isOpen, modalType } = useSelector((state: RootState) => state.modalStatus)
+
+  const [form, setForm] = useState<FilterForm>({
+    selectedDate: null,
+    tagSelectedList: [],
+    headLineInputValue: '',
+  })
 
   const activeFilterColor = {
     color: '#82B0F4',
@@ -28,7 +44,7 @@ const ScrapsScreen = () => {
   }
   const filterButtonList = [
     {
-      text: '전체 헤드라인',
+      text: '전체 헤드라인전체 헤드라인',
       icon: <SearchIcon fill={modalOpen ? '#82B0F4' : '#6D6D6D'} />,
     },
     {
@@ -115,7 +131,7 @@ const ScrapsScreen = () => {
   ]
 
   const onClickButtonHandler = () => {
-    setModalOpen(!modalOpen)
+    dispatch(modalStatus({ modalType: '/scraps', isOpen: true }))
   }
 
   useEffect(() => {
@@ -134,9 +150,26 @@ const ScrapsScreen = () => {
     }
   }, [])
 
+  const onSubmitHandler = (e: React.FormEvent<HTMLDivElement>) => {
+    e.preventDefault()
+
+    dispatch(
+      setScrapFilterModal({
+        selectedDate: form.selectedDate,
+        tagSelectedList: form.tagSelectedList,
+        headLineInputValue: form.headLineInputValue,
+      }),
+    )
+    onClose()
+  }
+
+  const onClose = () => {
+    dispatch(modalStatus({ modalType: '/scraps', isOpen: false }))
+  }
+
   useEffect(() => {
-    // console.log({ innerHeight })
-  }, [innerHeight])
+    //console.log('scrap', { selectedDate, tagSelectedList, headLineInputValue })
+  }, [selectedDate, tagSelectedList, headLineInputValue])
   return (
     <>
       {contentsList.length > 0 && innerHeight > 0 ? (
@@ -165,11 +198,12 @@ const ScrapsScreen = () => {
         </NotScrapsContainer>
       )}
       <FooterBar />
-      {modalOpen && (
-        <ModalPortal>
-          <FilterModal onClose={() => setModalOpen(!modalOpen)} />
-        </ModalPortal>
-      )}
+      <FilterModal
+        onClose={onClose}
+        form={form}
+        setForm={setForm}
+        onSubmitHandler={onSubmitHandler}
+      />
     </>
   )
 }
