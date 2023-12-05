@@ -1,6 +1,10 @@
 interface ButtonList {
-  item: { text: string; icon?: React.ReactNode; value?: string }
-  onClick: (value: string) => void
+  item: {
+    text: string
+    icon?: React.ReactNode | React.SVGProps<SVGSVGElement> | string
+    value?: string
+  }
+  onClick: (text: string, value: string) => void
   buttonStyle: {
     color: string
     backColor: string
@@ -8,14 +12,17 @@ interface ButtonList {
   }
 }
 
-import React, { useState } from 'react'
 import { styled } from 'styled-components'
 
 const Button = ({ item, onClick, buttonStyle }: ButtonList) => {
   return (
     <>
-      <ButtonWrapper onClick={() => onClick(item.text)} buttonStyle={buttonStyle} type="button">
-        {item.icon && <IconWrapper>{item.icon}</IconWrapper>}
+      <ButtonWrapper
+        onClick={() => onClick(item.text, item.value ? item.value : '')}
+        buttonStyle={buttonStyle}
+        type="button"
+      >
+        {item.icon && <IconWrapper>{item.icon ? item.icon : ''}</IconWrapper>}
         <span> {item.text}</span>
       </ButtonWrapper>
     </>

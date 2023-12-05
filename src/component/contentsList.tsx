@@ -1,23 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { styled } from 'styled-components'
 import StarOnIcon from '~/assets/icons/ico_star_on.svg'
 import StarOffIcon from '~/assets/icons/ico_star_off.svg'
 import { SpaceBetween } from '~/styles/common'
 import { useRouter } from 'next/router'
 import NotValue from './notValue'
-import { getCookie, setCookie } from '~/utils/cookies'
+import { setCookie } from '~/utils/cookies'
 import moment from 'moment'
 import { RootState } from '~/redux/store'
 import { useDispatch, useSelector } from 'react-redux'
 import { Scraps, scrapStatus } from '~/redux/scraps'
+import { getCookieHandler } from '~/utils/common'
 
-const ContentsList = ({ contentsList, ref, getCookieHandler, isFilter }: ContentsList) => {
+const ContentsList = ({ contentsList, isFilter }: ContentsListProps) => {
   const [innerHeight, setInnerHeight] = useState(0)
   const { scrapList }: Scraps = useSelector((state: RootState) => state.scrapStatus)
   const router = useRouter()
   const dispatch = useDispatch()
   const expires = moment().add(1, 'months').toDate()
-  const isScrap = router.pathname === '/scraps'
 
   const onClickStar = (id: string) => {
     let updatedList = [...scrapList]
@@ -35,50 +35,22 @@ const ContentsList = ({ contentsList, ref, getCookieHandler, isFilter }: Content
       expires,
       path: '/',
     })
-
-    if (isScrap) getCookieHandler()
   }
 
-  useEffect(() => {
-    const list = getCookie('scraps_list')
-    //console.log({ list })
-    dispatch(scrapStatus({ scrapList: list !== undefined ? list : [] }))
-    return
+  useLayoutEffect(() => {
+    getCookieHandler(dispatch)
   }, [])
 
-  // useEffect(() => {
-  //   if (typeof window !== 'undefined') {
-  //     const resizeHandler = () => {
-  //       console.log(window.innerHeight)
-  //       setInnerHeight(window.innerHeight)
-  //     }
-
-  //     setInnerHeight(window.innerHeight)
-  //     window.addEventListener('resize', resizeHandler)
-
-  //     return () => {
-  //       window.removeEventListener('resize', resizeHandler)
-  //     }
-  //   }
-  // }, [])
-
   useEffect(() => {
-    console.log('scraps_list', { scrapList })
+    //console.log('scraps_list', { scrapList })
     // console.log({ contentsList })
   }, [scrapList, contentsList])
   return (
     <>
-      <ContentsContainer innerHeight={innerHeight}>
+      <ContentsContainer>
         {contentsList.map((item) => (
           <ContentsBox key={item._id}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: 8,
-                overflow: 'hidden',
-              }}
-            >
+            <ContentsTitleBox>
               <ContentsTitle onClick={() => router.push(`${item.web_url}`)}>
                 {item.headline}
               </ContentsTitle>
@@ -86,7 +58,7 @@ const ContentsList = ({ contentsList, ref, getCookieHandler, isFilter }: Content
               <IconWrapper onClick={() => onClickStar(item._id)}>
                 {scrapList.includes(item._id) ? <StarOnIcon /> : <StarOffIcon />}
               </IconWrapper>
-            </div>
+            </ContentsTitleBox>
             <ContentsBottomBox>
               <div style={{ display: 'flex', gap: 8 }}>
                 <span>{item.source}</span>
@@ -105,18 +77,17 @@ const ContentsList = ({ contentsList, ref, getCookieHandler, isFilter }: Content
             onClick={() => router.reload()}
           />
         )}
-        <div ref={ref}></div>
       </ContentsContainer>
     </>
   )
 }
 
-const ContentsContainer = styled.div<{ innerHeight: number }>`
+const ContentsContainer = styled.div`
   padding: 20px;
   background-color: #f0f1f4;
-  //height: ${({ innerHeight }) => `${innerHeight}px`};
-  /* height: 85vh; */
+  margin-bottom: 85px;
 `
+
 const ContentsBox = styled.div`
   display: flex;
   flex-direction: column;
@@ -128,6 +99,13 @@ const ContentsBox = styled.div`
   border-radius: 8px;
   background-color: #ffffff;
   margin-bottom: 8px;
+`
+
+const ContentsTitleBox = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8%;
+  overflow: hidden;
 `
 
 const ContentsTitle = styled.p`

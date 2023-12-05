@@ -50,18 +50,18 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
     }
   }
 
-  const tagHandler = (value: string) => {
-    if (tagSelectedList.includes(value)) {
+  const tagHandler = (text: string, value: string) => {
+    if (tagSelectedList.find((tag) => tag.value === value)) {
       setForm({
         ...form,
-        tagSelectedList: tagSelectedList.filter((item) => item !== value),
+        tagSelectedList: tagSelectedList.filter((item) => item.value !== value),
       })
       return
     }
 
     setForm({
       ...form,
-      tagSelectedList: [...tagSelectedList, value],
+      tagSelectedList: [...tagSelectedList, { text, value }],
     })
   }
 
@@ -79,10 +79,6 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
       headLineInputValue: value,
     })
   }
-
-  useEffect(() => {
-    //  console.log(isOpen, modalType, router.pathname)
-  }, [isOpen, modalType])
 
   return (
     <>
@@ -130,7 +126,9 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
                       item={item}
                       key={item.value}
                       buttonStyle={
-                        tagSelectedList.includes(item.text) ? selectTagColor : normalTagColor
+                        tagSelectedList.find((tag) => tag.value === item.value)
+                          ? selectTagColor
+                          : normalTagColor
                       }
                       onClick={tagHandler}
                     />

@@ -1,5 +1,5 @@
 export type FilterForm = {
   selectedDate: null | Date
-  tagSelectedList: string[]
+  tagSelectedList: { text: string; value: string }[]
   headLineInputValue: string
 }

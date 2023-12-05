@@ -47,16 +47,16 @@ const FooterBar = () => {
 
 const FooterContainer = styled.footer`
   ${SpaceBetween}
-  position: sticky;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
-  /* height: 85px; */
   padding: 20px 80px;
   border-radius: 30px;
   background-color: #000000;
   z-index: 999;
+  height: 85px;
 `
 
 const IconBox = styled.div<{ isHome: boolean }>`

@@ -1,14 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import styled from 'styled-components'
 import Button from '~/component/button'
-import SearchIcon from '~/assets/icons/ico_search.svg'
-import CalenderIcon from '~/assets/icons/ico_calender.svg'
 import ContentsList from '~/component/contentsList'
 import FooterBar from '~/component/footerBar'
-import ModalPortal from '~/component/modal/modalConfig'
 import FilterModal from '~/component/modal/modal'
-import { ButtonContainer } from '~/styles/common'
-
+import { ButtonContainer, Loading, activeFilterColor, normalFilterColor } from '~/styles/common'
 import { useRouter } from 'next/router'
 import { RootState } from '~/redux/store'
 import { useDispatch, useSelector } from 'react-redux'
@@ -16,147 +12,94 @@ import { FilterForm } from '~/types/modal'
 import { setScrapFilterModal } from '~/redux/scrapModal'
 import { modalStatus } from '~/redux/modalStatus'
 import NotValue from '~/component/notValue'
-import { getCookie } from '~/utils/cookies'
 import { Scraps, scrapStatus } from '~/redux/scraps'
-import moment from 'moment'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import axios from 'axios'
-const KEY = process.env.NEXT_PUBLIC_API_KEY
+import { findUrl, getCookieHandler, makeData, makeFilterData } from '~/utils/common'
+import { useInView } from 'react-intersection-observer'
+import ReactLoading from 'react-loading'
+
 const ScrapsScreen = () => {
   const [modalOpen, setModalOpen] = useState<boolean>(false)
   const [innerHeight, setInnerHeight] = useState(0)
-  const [isScrap, setIsScrap] = useState(false)
   const router = useRouter()
   const dispatch = useDispatch()
   const { scrapList }: Scraps = useSelector((state: RootState) => state.scrapStatus)
   const { selectedDate, tagSelectedList, headLineInputValue } = useSelector(
     (state: RootState) => state.filterScrapModal,
   )
-  const { isOpen, modalType } = useSelector((state: RootState) => state.modalStatus)
+  const [ref, inView] = useInView({ rootMargin: '0px 0px 10px 0px' })
   const [contentsList, setContentsList] = useState<ContentsList[]>([])
   const [page, setPage] = useState(1)
   const [isFilter, setIsFilter] = useState(false)
-  const [filterButtonList, setFilterButtonList] = useState([{ text: '', icon: '' }])
-  const [form, setForm] = useState<FilterForm>({
+  const [filterButtonList, setFilterButtonList] = useState<
+    { text: string; icon: React.SVGProps<SVGSVGElement> | string }[]
+  >([{ text: '', icon: '' }])
+
+  const [scrapForm, setScrapForm] = useState<FilterForm>({
     selectedDate: null,
     tagSelectedList: [],
     headLineInputValue: '',
   })
 
-  const activeFilterColor = {
-    color: '#82B0F4',
-    borderColor: '#82B0F4',
-    backColor: '#ffffff',
-  }
-  const normalFilterColor = {
-    color: '#6D6D6D',
-    borderColor: '#c4c4c4',
-    backColor: '#ffffff',
-  }
-
-  useEffect(() => {
-    getCookieHandler()
+  useLayoutEffect(() => {
+    getCookieHandler(dispatch)
   }, [])
 
-  const getCookieHandler = () => {
-    const list = getCookie('scraps_list')
-    dispatch(scrapStatus({ scrapList: list !== undefined ? list : [] }))
-    //refetch()
-  }
+  const fetchScrapsData = async (
+    page: number,
+    headLineInputValue: FilterForm['headLineInputValue'],
+    selectedDate: FilterForm['selectedDate'],
+    tagSelectedList: FilterForm['tagSelectedList'],
+    scrapList: string[],
+  ) => {
+    const url = findUrl(selectedDate, tagSelectedList, headLineInputValue, page)
 
-  const fetchScrapsData = async ({
-    pageParam = 1,
-    headLineInputValue,
-    selectedDate,
-    tagSelectedList,
-  }) => {
-    console.log('in')
+    const res = await axios.get(url)
+    console.log({ res })
 
-    const KEY = process.env.NEXT_PUBLIC_API_KEY
-    let apiUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?limit=10&api-key=${KEY}&page=${pageParam}`
+    const makeDataList: ContentsList[] = makeData(
+      res.data.response.docs.filter((item: { _id: string }) => scrapList.includes(item._id)),
+    )
 
-    if (headLineInputValue !== '') {
-      apiUrl += `&q=${headLineInputValue}`
-    }
-
-    if (selectedDate) {
-      const formattedDate = moment(selectedDate).format('YYYYMMDD')
-      apiUrl += `&begin_date=${formattedDate}`
-    }
-
-    if (tagSelectedList.length > 0) {
-      const countries = tagSelectedList.join(',')
-      apiUrl += `&fq=news_desk:(${countries})`
-    }
-
-    const res = await axios.get(apiUrl)
-    // console.log({ res })
-
-    const makeDataList = res.data.response.docs
-      .filter((item) => scrapList.includes(item._id))
-      .map((item) => ({
-        ...item,
-        headline: item.headline.main,
-        byline: item.byline.original,
-        date: moment(item.pub_date).format('YYYY.MM.DD (dd)'),
-      }))
-    // console.log({ makeDataList })
-    setContentsList((prev) => {
-      const newContentsList = [...makeDataList.map((page) => page)]
+    console.log({ makeDataList })
+    setContentsList(() => {
+      const newContentsList: ContentsList[] = [...makeDataList.map((item) => item)]
       return Array.from(new Set(newContentsList))
     })
+
+    console.log({ makeDataList })
+
+    if (page > 1) {
+      setContentsList((list) => [...list, ...makeDataList])
+      return
+    }
+    setContentsList(makeDataList)
     return makeDataList
   }
 
-  const {
-    data: infiniteData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching,
-    isLoading,
-    isError,
-    refetch,
-  } = useInfiniteQuery(
-    ['infiniteScrapsData', headLineInputValue, selectedDate, tagSelectedList],
-    ({ pageParam }) =>
-      fetchScrapsData({
-        pageParam,
-        headLineInputValue,
-        selectedDate,
-        tagSelectedList,
-      }),
-    {
-      getNextPageParam: (lastPage) =>
-        lastPage?.length > 0 && lastPage[lastPage.length - 1].page + 1,
-    },
+  const { isLoading, isError } = useInfiniteQuery(
+    ['infiniteScraps', headLineInputValue, selectedDate, tagSelectedList, scrapList],
+    () => fetchScrapsData(page, headLineInputValue, selectedDate, tagSelectedList, scrapList),
   )
 
   useEffect(() => {
-    setFilterButtonList([
-      {
-        text: headLineInputValue !== '' ? headLineInputValue : '전체 헤드라인',
-        icon: <SearchIcon fill={modalOpen ? '#82B0F4' : '#6D6D6D'} />,
-      },
-      {
-        text: selectedDate !== null ? moment(selectedDate).format('YYYY.MM.DD') : '전체 날짜',
-        icon: <CalenderIcon fill={modalOpen ? '#82B0F4' : '#6D6D6D'} />,
-      },
-      {
-        text:
-          tagSelectedList.length > 0
-            ? tagSelectedList.length === 1
-              ? `${tagSelectedList}`
-              : `${tagSelectedList[0]} 외 ${tagSelectedList.length - 1}개`
-            : '전체 국가',
-        icon: '',
-      },
-    ])
+    setFilterButtonList(
+      makeFilterData(headLineInputValue, selectedDate, tagSelectedList, modalOpen),
+    )
   }, [selectedDate, tagSelectedList, headLineInputValue])
 
   useEffect(() => {
-    //if (!isLoading) refetch()
-  }, [isLoading])
+    if (inView && page < 10 && !isLoading) {
+      // fetchNextPage()
+      setPage((prev) => prev + 1)
+    }
+    return
+  }, [inView, isLoading, page])
+
+  useEffect(() => {
+    //  console.log({ tagSelectedList })
+  }, [tagSelectedList])
 
   const onClickButtonHandler = () => {
     dispatch(modalStatus({ modalType: '/scraps', isOpen: true }))
@@ -167,18 +110,13 @@ const ScrapsScreen = () => {
 
     dispatch(
       setScrapFilterModal({
-        selectedDate: form.selectedDate,
-        tagSelectedList: form.tagSelectedList,
-        headLineInputValue: form.headLineInputValue,
+        selectedDate: scrapForm.selectedDate,
+        tagSelectedList: scrapForm.tagSelectedList,
+        headLineInputValue: scrapForm.headLineInputValue,
       }),
     )
-    setIsFilter(true)
-    fetchNextPage(1)
-    // if (hasNextPage && !isFetchingNextPage) {
-    //   fetchNextPage()
-    //   onClose()
-    // }
 
+    setIsFilter(true)
     onClose()
   }
 
@@ -187,31 +125,28 @@ const ScrapsScreen = () => {
   }
 
   useEffect(() => {
-    console.log({ contentsList })
-    console.log({ scrapList })
-    console.log({ isLoading })
+    //console.log({ contentsList })
+    // console.log({ scrapList })
+    // console.log({ infiniteData })
+    // console.log({ isLoading })
     // console.log({ data })
     // setContentsList(infiniteData?.pages[0])
-    //console.log('scrap', { selectedDate, tagSelectedList, headLineInputValue })
-  }, [contentsList, scrapList, isLoading])
+    // console.log('scrap', { selectedDate, tagSelectedList, headLineInputValue })
+  }, [contentsList, scrapList, isLoading, selectedDate, tagSelectedList, headLineInputValue])
 
-  if (isLoading) {
-    return <NotValue innerHeight={innerHeight} setInnerHeight={setInnerHeight} text="Loading..." />
-  }
-
-  if (isError) {
-    return (
-      <NotValue
-        innerHeight={innerHeight}
-        setInnerHeight={setInnerHeight}
-        text="1분뒤에 다시 시도해주세요"
-      />
-    )
-  }
+  // if (isError) {
+  //   return (
+  //     <NotValue
+  //       innerHeight={innerHeight}
+  //       setInnerHeight={setInnerHeight}
+  //       text="1분뒤에 다시 시도해주세요"
+  //     />
+  //   )
+  // }
 
   return (
     <>
-      {contentsList.length > 0 && innerHeight > 0 && scrapList.length > 0 ? (
+      {innerHeight > 0 && scrapList.length > 0 ? (
         <>
           <Headers>
             <ButtonContainer>
@@ -225,11 +160,12 @@ const ScrapsScreen = () => {
               ))}
             </ButtonContainer>
           </Headers>
-          <ContentsList
-            contentsList={contentsList}
-            getCookieHandler={getCookieHandler}
-            isFilter={isFilter}
-          />
+          <ContentsList contentsList={contentsList} isFilter={isFilter} />
+          {isLoading && page < 10 && (
+            <Loading>
+              <ReactLoading className="loading" type="spin" color="#ccc" height={24} width={24} />
+            </Loading>
+          )}
         </>
       ) : (
         <NotValue
@@ -243,8 +179,8 @@ const ScrapsScreen = () => {
       <FooterBar />
       <FilterModal
         onClose={onClose}
-        form={form}
-        setForm={setForm}
+        form={scrapForm}
+        setForm={setScrapForm}
         onSubmitHandler={onSubmitHandler}
       />
     </>

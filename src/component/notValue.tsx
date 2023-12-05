@@ -1,6 +1,6 @@
 interface NotValueProps {
-  innerHeight?: number
-  setInnerHeight?: React.Dispatch<SetStateAction<number>>
+  innerHeight: number
+  setInnerHeight: React.Dispatch<SetStateAction<number>>
   text: string
   btnText?: string
   onClick?: () => void
