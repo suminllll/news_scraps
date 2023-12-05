@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import Button from '~/component/button'
 import SearchIcon from '~/assets/icons/ico_search.svg'
@@ -13,10 +13,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FilterForm } from '~/types/modal'
 import { setHomeFilterModal } from '~/redux/homeModal'
 import { modalStatus } from '~/redux/modalStatus'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { QueryClient, dehydrate, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import moment from 'moment'
 import 'moment/locale/ko'
+import NotValue from '~/component/notValue'
+import { GetServerSideProps, GetStaticProps } from 'next/types'
 
 const HomeScreen = () => {
   const KEY = process.env.NEXT_PUBLIC_API_KEY
@@ -26,9 +28,11 @@ const HomeScreen = () => {
   const { selectedDate, tagSelectedList, headLineInputValue } = useSelector(
     (state: RootState) => state.filterHomeModal,
   )
+  const [innerHeight, setInnerHeight] = useState(0)
   const { isOpen, modalType } = useSelector((state: RootState) => state.modalStatus)
   const [page, setPage] = useState(1)
-  const [contentsList, setContentsList] = useState([])
+  const [contentsList, setContentsList] = useState<ContentsList[]>([])
+  const [isFilter, setIsFilter] = useState(false)
   const [filterButtonList, setFilterButtonList] = useState([{ text: '', icon: '' }])
   const [form, setForm] = useState<FilterForm>({
     selectedDate: null,
@@ -69,35 +73,89 @@ const HomeScreen = () => {
     ])
   }, [selectedDate, tagSelectedList, headLineInputValue])
 
-  useEffect(() => {
-    const fetch = async (pageParam: number) => {
-      const begin_date = selectedDate !== null ? moment(selectedDate).format('YYYYMMDD') : ''
-      const keyword = [headLineInputValue, ...tagSelectedList]
-      axios
-        .get(
-          `https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=${keyword}&page=${page}&limit=10&api-key=${KEY}`,
-        )
-        .then((data) => {
-          const result = data.data.response
-          const makeDataList = result.docs.map((item) => {
-            return {
-              ...item,
-              headLine: item.headline.main,
-              byline: item.byline.original,
-              date: moment(item.pub_date).format('YYYY.MM.DD (dd)'),
-            }
-          })
-          setContentsList(makeDataList)
-          console.log({ data })
-        })
+  const fetchScrapsData = async ({
+    pageParam,
+    headLineInputValue,
+    selectedDate,
+    tagSelectedList,
+  }) => {
+    console.log('in')
+
+    const KEY = process.env.NEXT_PUBLIC_API_KEY
+    let apiUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?limit=3&api-key=${KEY}&page=${pageParam}`
+
+    if (headLineInputValue !== '') {
+      apiUrl += `&q=${headLineInputValue}`
     }
-    fetch()
-  }, [selectedDate, tagSelectedList, headLineInputValue])
-  //  const res = useInfiniteQuery('homeNews', ({ pageParam = 1 }) => fetch(pageParam), {
-  // getNextPageParam: (lastPage, pages) => {
-  //   console.log({ lastPage })
-  // },
-  // })
+
+    if (selectedDate) {
+      const formattedDate = moment(selectedDate).format('YYYYMMDD')
+      apiUrl += `&begin_date=${formattedDate}`
+    }
+
+    if (tagSelectedList.length > 0) {
+      const countries = tagSelectedList.join(',')
+      apiUrl += `&fq=news_desk:(${countries})`
+    }
+
+    const res = await axios.get(apiUrl)
+    // console.log({ res })
+
+    const makeDataList = res.data.response.docs.map((item) => {
+      return {
+        ...item,
+        headline: item.headline.main,
+        byline: item.byline.original,
+        date: moment(item.pub_date).format('YYYY.MM.DD (dd)'),
+      }
+    })
+    setContentsList(makeDataList)
+    return makeDataList
+  }
+
+  const {
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+    isLoading,
+    isError,
+    refetch,
+  } = useInfiniteQuery(
+    ['infiniteScrapsData', headLineInputValue, selectedDate, tagSelectedList],
+    ({ pageParam = 1 }) =>
+      fetchScrapsData({
+        pageParam,
+        headLineInputValue,
+        selectedDate,
+        tagSelectedList,
+      }),
+    {
+      getNextPageParam: (lastPage, allPages) => {
+        // console.log('lastPage', lastPage, allPages)
+        //return lastPage.page !== allPosts[0].totalPage ? lastPage.page + 1 : undefined;
+        return lastPage?.length > 0 && lastPage[lastPage.length - 1].page + 1
+      },
+    },
+  )
+
+  useEffect(() => {
+    // console.log({ contentsList })
+    //  console.log({ infiniteData })
+    // console.log({ isLoading })
+    // console.log('hasNextPage', hasNextPage, isFetchingNextPage)
+    // setContentsList(infiniteData?.pages[0])
+  }, [contentsList, infiniteData])
+
+  useLayoutEffect(() => {
+    // console.log('ee')
+  }, [infiniteData])
+  useEffect(() => {
+    // if (data === undefined) {
+    //   refetch()
+    // }
+  }, [])
 
   const onClickButtonHandler = () => {
     dispatch(modalStatus({ modalType: '/', isOpen: true }))
@@ -108,51 +166,38 @@ const HomeScreen = () => {
 
     dispatch(
       setHomeFilterModal({
-        selectedDate: form.selectedDate,
-        tagSelectedList: form.tagSelectedList,
-        headLineInputValue: form.headLineInputValue,
+        selectedDate: selectedDate,
+        tagSelectedList: tagSelectedList,
+        headLineInputValue: headLineInputValue,
       }),
     )
+
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+
     onClose()
+    setIsFilter(true)
   }
 
   const onClose = () => {
     dispatch(modalStatus({ modalType: '', isOpen: false }))
   }
 
-  const handleIntersect = () => {
-    setPage((page) => page + 1)
-    // getList()
-  }
-
   useEffect(() => {
-    const currentScrollRef = scrollRef.current
-
-    const options = {
-      root: null,
-      rootMargin: '30px',
-    }
-
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) handleIntersect()
-    }, options)
-
-    if (currentScrollRef) {
-      observer.observe(currentScrollRef)
-    }
-
-    return () => {
-      if (currentScrollRef) {
-        observer.disconnect()
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    console.log({ page })
-
+    //console.log({ page })
     // console.log('home', { selectedDate, tagSelectedList, headLineInputValue })
   }, [page])
+
+  if (isError) {
+    return (
+      <NotValue
+        innerHeight={innerHeight}
+        setInnerHeight={setInnerHeight}
+        text="1분뒤에 다시 시도해주세요"
+      />
+    )
+  }
 
   return (
     <>
@@ -168,7 +213,11 @@ const HomeScreen = () => {
           ))}
         </ButtonContainer>
       </Headers>
-      <ContentsList contentsList={contentsList} ref={scrollRef} />
+      {isLoading ? (
+        <NotValue innerHeight={innerHeight} setInnerHeight={setInnerHeight} text="Loading..." />
+      ) : (
+        <ContentsList contentsList={contentsList} ref={scrollRef} isFilter={isFilter} />
+      )}
       <FooterBar />
       <FilterModal
         onClose={onClose}
@@ -187,3 +236,28 @@ const Headers = styled.header`
 `
 
 export default HomeScreen
+// const fetchData = async () => {
+//   const KEY = process.env.NEXT_PUBLIC_API_KEY
+//   let apiUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?limit=10&api-key=${KEY}`
+//   try {
+//     const response = await axios.get(apiUrl)
+//     const data = response.data.response.docs
+//     console.log({ response })
+
+//     return data
+//   } catch (error) {
+//     console.error('Error fetching data:', error)
+//     throw error
+//   }
+// }
+// export const getStaticProps: GetStaticProps = async () => {
+//   const queryClient = new QueryClient()
+
+//   await queryClient.fetchQuery(['serverside'], fetchData)
+
+//   return {
+//     props: {
+//       dehydratedState: dehydrate(queryClient),
+//     },
+//   }
+// }

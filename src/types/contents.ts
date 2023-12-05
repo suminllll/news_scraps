@@ -1,4 +1,12 @@
 interface ContentsList {
-  contentsList: { title: string; attached: string; name: string; date: string; isStar: boolean }[]
+  contentsList: {
+    _id: string
+    headline: string
+    web_url: string
+    source: string
+    byline: string
+    date: string
+    isStar: boolean
+  }[]
   ref: React.MutableRefObject<HTMLDivElement>
 }

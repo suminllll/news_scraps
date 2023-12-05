@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
 import { Provider } from 'react-redux'
@@ -19,7 +19,9 @@ function MyApp({ Component, pageProps }: AppProps) {
     <>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <Component {...pageProps} />
+          <Hydrate state={pageProps.dehydratedProps}>
+            <Component {...pageProps} />
+          </Hydrate>
         </QueryClientProvider>
       </Provider>
     </>
