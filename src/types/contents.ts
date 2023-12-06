@@ -9,8 +9,8 @@ type ContentsList = {
   web_url: string
   source: string
   byline: string
-  date: moment.MomentInput
-  pub_date: moment.MomentInput
+  date: string
+  pub_date?: string
   abstract: string
 }
 
@@ -20,8 +20,8 @@ type FormattedContentsList = {
   web_url: string
   source: string
   byline: { original: string }
-  date: moment.MomentInput
-  pub_date: moment.MomentInput
+  date: string
+  pub_date?: string
   abstract: string
 }
 

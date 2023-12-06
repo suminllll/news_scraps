@@ -2,16 +2,19 @@ import moment from 'moment'
 
 export const makeData = (dataList: FormattedContentsList[]): ContentsList[] => {
   return dataList.map((item) => ({
-    ...item,
+    _id: item._id,
     headline: item.headline.main,
     byline: item.byline.original,
     date: moment(item.pub_date).format('YYYY.MM.DD (dd)'),
+    web_url: item.web_url,
+    source: item.source,
+    abstract: item.abstract,
   }))
 }
 
 import SearchIcon from '~/assets/icons/ico_search.svg'
 import CalenderIcon from '~/assets/icons/ico_calender.svg'
-import { FilterButton, FilterForm } from '~/types/modal'
+import { FilterForm } from '~/types/modal'
 import { scrapStatus } from '~/redux/scraps'
 import { getCookie } from './cookies'
 import { AnyAction } from '@reduxjs/toolkit'
@@ -53,7 +56,7 @@ export const makeFilterData = (
 }
 
 export const checkedNull = (data: any) => {
-  return data !== null && data !== '' ? true : false
+  return data !== null && data !== '' && data !== 'Invalid date' ? true : false
 }
 
 export const findUrl = (
@@ -66,12 +69,10 @@ export const findUrl = (
   let apiUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?api-key=${KEY}&page=${page}`
 
   if (headLineInputValue !== '' && headLineInputValue !== null) {
-    apiUrl += `&fq=headline:${headLineInputValue}`
+    apiUrl += `&q=${headLineInputValue}`
   }
 
-  if (selectedDate) {
-    console.log({ selectedDate })
-
+  if (checkedNull(selectedDate)) {
     const formattedDate = moment(selectedDate).format('YYYYMMDD')
     apiUrl += `&begin_date=${formattedDate}`
   }

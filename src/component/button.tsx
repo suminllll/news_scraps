@@ -2,7 +2,6 @@ interface ButtonList {
   item: {
     text: string | null
     icon?: React.ReactNode
-    //| React.SVGProps<SVGSVGElement> | string
     value?: string
   }
   onClick: (text: string, value: string) => void

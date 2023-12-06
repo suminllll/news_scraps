@@ -11,15 +11,14 @@ import { setHomeFilterModal } from '~/redux/homeModal'
 import { modalStatus } from '~/redux/modalStatus'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import 'moment/locale/ko'
 import NotValue from '~/component/notValue'
 import { useInView } from 'react-intersection-observer'
 import ReactLoading from 'react-loading'
 import { findUrl, makeData, makeFilterData } from '~/utils/common'
 import { Headers } from '../styles/common'
+import moment from 'moment'
 
 const HomeScreen = () => {
-  const { isOpen } = useSelector((state: RootState) => state.modalStatus)
   const dispatch = useDispatch()
   const { selectedDate, tagSelectedList, headLineInputValue } = useSelector(
     (state: RootState) => state.filterHomeModal,
@@ -48,14 +47,16 @@ const HomeScreen = () => {
     selectedDate: FilterForm['selectedDate'],
     tagSelectedList: FilterForm['tagSelectedList'],
   ) => {
-    console.log(selectedDate, tagSelectedList, headLineInputValue)
-
     const url = findUrl(selectedDate, tagSelectedList, headLineInputValue, page)
-    console.log({ url })
 
     const res = await axios.get(url)
-    const makeDataList: ContentsList[] = makeData(res.data.response.docs)
-    console.log({ makeDataList })
+    let makeDataList: ContentsList[] = makeData(res.data.response.docs)
+
+    if (isFilter) {
+      makeDataList = makeDataList.filter((e) =>
+        e.headline.toLowerCase().includes(headLineInputValue !== null ? headLineInputValue : ''),
+      )
+    }
 
     page > 1 ? setContentsList((list) => [...list, ...makeDataList]) : setContentsList(makeDataList)
 
@@ -71,26 +72,18 @@ const HomeScreen = () => {
     if (inView && page < 10 && !isLoading) {
       setPage((prev) => prev + 1)
     }
-  }, [inView, isLoading])
+  }, [inView, isLoading, page])
 
   useEffect(() => {
     setFilterButtonList(makeFilterData(headLineInputValue, selectedDate, tagSelectedList))
   }, [selectedDate, tagSelectedList, headLineInputValue])
-
-  useEffect(() => {
-    // console.log({ page })
-    // console.log({ contentsList })
-    // console.log({ isLoading })
-    // console.log({ isOpen })
-    // console.log({ filterButtonList })
-  }, [contentsList, page, isLoading, filterButtonList])
 
   const onSubmitHandler = (e: React.FormEvent<HTMLDivElement>) => {
     e.preventDefault()
 
     dispatch(
       setHomeFilterModal({
-        selectedDate: homeForm.selectedDate,
+        selectedDate: selectedDate ? moment(homeForm.selectedDate).format('YYYY.MM.DD') : '',
         tagSelectedList: homeForm.tagSelectedList,
         headLineInputValue: homeForm.headLineInputValue,
       }),

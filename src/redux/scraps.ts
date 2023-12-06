@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
 export interface Scraps {
-  scrapList: string[]
+  scrapList: ContentsList[]
 }
 
 const initialState = {

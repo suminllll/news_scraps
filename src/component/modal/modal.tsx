@@ -7,7 +7,7 @@ interface ModalProps {
 
 import { styled } from 'styled-components'
 import Button from '../button'
-import { SetStateAction, useEffect, useRef, useState } from 'react'
+import { SetStateAction, useRef } from 'react'
 import CalenderIcon from '~/assets/icons/ico_calender.svg'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -97,7 +97,7 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
                   placeholder="검색하실 헤드라인을 입력해주세요."
                   onChange={(e) => headLineInputHandler(e)}
                   type="text"
-                  value={headLineInputValue}
+                  value={headLineInputValue as string}
                 />
               </InputContainer>
               <InputContainer>
@@ -113,7 +113,7 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
                       <CalenderIcon fill="#6D6D6D" />
                     </div>
                   }
-                  selected={selectedDate}
+                  selected={selectedDate as Date}
                   onChange={(date) => setForm({ ...form, selectedDate: date })}
                 />
               </InputContainer>

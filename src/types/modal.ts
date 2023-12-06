@@ -1,5 +1,7 @@
+import moment from 'moment'
+
 export type FilterForm = {
-  selectedDate: null | Date
+  selectedDate: null | string | Date
   tagSelectedList: { text: string; value: string }[]
   headLineInputValue: string | null
 }

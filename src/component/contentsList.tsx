@@ -17,16 +17,16 @@ const ContentsList = ({ contentsList, isFilter }: ContentsListProps) => {
   const { scrapList }: Scraps = useSelector((state: RootState) => state.scrapStatus)
   const router = useRouter()
   const dispatch = useDispatch()
-  const expires = moment().add(1, 'months').toDate()
+  const expires = moment().add(1, 'weeks').toDate()
 
-  const onClickStar = (id: string) => {
+  const onClickStar = (data: ContentsList) => {
     let updatedList = [...scrapList]
 
-    if (scrapList.includes(id)) {
-      updatedList = updatedList.filter((item) => item !== id)
+    if (scrapList.find((e) => e._id === data._id)) {
+      updatedList = updatedList.filter((item) => item._id !== data._id)
       alert('스크랩이 해제 되었어요.')
     } else {
-      updatedList.push(id)
+      updatedList.push(data)
       alert('스크랩 되었어요.')
     }
 
@@ -41,22 +41,19 @@ const ContentsList = ({ contentsList, isFilter }: ContentsListProps) => {
     getCookieHandler(dispatch)
   }, [])
 
-  useEffect(() => {
-    //console.log('scraps_list', { scrapList })
-    //console.log({ contentsList })
-  }, [scrapList, contentsList])
+
   return (
     <>
       <ContentsContainer>
-        {contentsList.map((item) => (
-          <ContentsBox key={item._id}>
+        {contentsList.map((item, i) => (
+          <ContentsBox key={i}>
             <ContentsTitleBox>
               <ContentsTitle onClick={() => router.push(`${item.web_url}`)}>
                 {item.headline}
               </ContentsTitle>
 
-              <IconWrapper onClick={() => onClickStar(item._id)}>
-                {scrapList.includes(item._id) ? <StarOnIcon /> : <StarOffIcon />}
+              <IconWrapper onClick={() => onClickStar(item)}>
+                {scrapList.find((e) => e._id === item._id) ? <StarOnIcon /> : <StarOffIcon />}
               </IconWrapper>
             </ContentsTitleBox>
             <ContentsBottomBox>

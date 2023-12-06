@@ -12,21 +12,19 @@ import { setScrapFilterModal } from '~/redux/scrapModal'
 import { modalStatus } from '~/redux/modalStatus'
 import NotValue from '~/component/notValue'
 import { Scraps } from '~/redux/scraps'
-import axios from 'axios'
-import { findUrl, getCookieHandler, makeData, makeFilterData } from '~/utils/common'
+import { getCookieHandler, makeFilterData } from '~/utils/common'
 import { useInView } from 'react-intersection-observer'
 import ReactLoading from 'react-loading'
 import moment from 'moment'
 
 const ScrapsScreen = () => {
-  const { isOpen } = useSelector((state: RootState) => state.modalStatus)
   const [innerHeight, setInnerHeight] = useState(0)
   const router = useRouter()
   const dispatch = useDispatch()
   const { scrapList }: Scraps = useSelector((state: RootState) => state.scrapStatus)
   const { selectedDate, tagSelectedList, headLineInputValue } = useSelector(
     (state: RootState) => state.filterScrapModal,
-  )
+  ) //필터 state
   const [ref, inView] = useInView({ rootMargin: '0px 0px 10px 0px' })
   const [scrapContentsList, setScrapContentsList] = useState<ScrapContentsList>({
     list: [],
@@ -50,95 +48,67 @@ const ScrapsScreen = () => {
     getCookieHandler(dispatch)
   }, [])
 
-  useEffect(() => {
-    if (scrapList.length > 0) {
-      const fetchScrapsData = async () => {
-        setIsLoading(true)
-        const url = findUrl(selectedDate, tagSelectedList, headLineInputValue, page)
-
-        try {
-          const res = await axios.get(url)
-
-          const makeDataList: ScrapContentsList['list'] = makeData(
-            res.data.response.docs.filter((item: { _id: string }) => scrapList.includes(item._id)),
-          )
-          console.log({ makeDataList })
-
-          getMakeData(makeDataList)
-        } catch (err) {
-          console.log({ err })
-          setIsError(true)
-        }
-      }
-
-      fetchScrapsData()
-    }
-  }, [scrapList])
-
-  const getMakeData = (makeDataList: ScrapContentsList['list']) => {
+  const getFormatData = (data: ContentsList[]) => {
     setScrapContentsList((prevContents) => {
       if (page > 1) {
         const startIdx = (page - 1) * 10
         const endIdx = startIdx + 10
-        const newItems = makeDataList.slice(startIdx, endIdx)
+        const newItems = data.slice(startIdx, endIdx)
 
         return {
           ...prevContents,
           list: [...prevContents.list, ...newItems],
           page,
-          totalPage: makeDataList.length / 10,
+          totalPage: data.length / 10,
         }
       }
 
       return {
-        list: [...makeDataList.slice(0, 10)],
+        list: [...data.slice(0, 10)],
         page,
-        totalPage: makeDataList.length / 10 < 1 ? 1 : makeDataList.length / 10,
+        totalPage: data.length / 10 < 1 ? 1 : data.length / 10,
       }
     })
-
-    setIsLoading(false)
-    return
   }
+  useEffect(() => {
+    getFormatData(scrapList)
+  }, [scrapList])
 
   useEffect(() => {
     setFilterButtonList(makeFilterData(headLineInputValue, selectedDate, tagSelectedList))
 
     if (isFilter) {
-      const filter = scrapContentsList.list.filter((item) => {
+      const scrapFilter = scrapList.filter((item) => {
         const conditions = []
-        console.log('i', headLineInputValue)
 
         if (headLineInputValue) {
-          conditions.push(item.headline.includes(headLineInputValue))
+          conditions.push(item.headline.toLowerCase().includes(headLineInputValue))
         }
 
         if (selectedDate) {
-          conditions.push(moment(selectedDate).format('YYYY.MM.DD (dd)') === item.date)
+          conditions.push(
+            moment(item.date).format('YYYY.MM.DD') === moment(selectedDate).format('YYYY.MM.DD'),
+          )
         }
 
         if (tagSelectedList.length > 0) {
-          const tagMatches = tagSelectedList.some(
+          const tagMatches = tagSelectedList.find(
             (tag) => item.headline.includes(tag.value) || item.abstract.includes(tag.value),
           )
           conditions.push(tagMatches)
         }
-        console.log({ conditions })
 
         if (conditions.length === 3) {
           return conditions.every(Boolean)
         } else if (conditions.length === 2) {
-          console.log(conditions.every(Boolean))
-
           return conditions.every(Boolean)
         } else if (conditions.length === 1) {
-          return conditions[0] //
+          return conditions[0]
         } else {
           return false
         }
       })
-      console.log({ filter })
-      getMakeData(filter)
+      getFormatData(scrapFilter)
     }
   }, [selectedDate, tagSelectedList, headLineInputValue])
 
@@ -147,13 +117,6 @@ const ScrapsScreen = () => {
       setPage((prev) => prev + 1)
     }
   }, [inView, isLoading, page])
-
-  useEffect(() => {
-    //  console.log({ headLineInputValue })
-    console.log({ scrapContentsList })
-    console.log({ scrapList })
-    //  console.log({ isLoading })
-  }, [scrapContentsList, scrapList, isLoading, headLineInputValue])
 
   const onClickButtonHandler = () => {
     dispatch(modalStatus({ modalType: '/scraps', isOpen: true }))
@@ -164,7 +127,7 @@ const ScrapsScreen = () => {
 
     dispatch(
       setScrapFilterModal({
-        selectedDate: scrapForm.selectedDate,
+        selectedDate: moment(scrapForm.selectedDate).format('YYYY.MM.DD'),
         tagSelectedList: scrapForm.tagSelectedList,
         headLineInputValue: scrapForm.headLineInputValue,
       }),
