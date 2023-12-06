@@ -4,7 +4,7 @@ import { FilterForm } from '~/types/modal'
 export const initialState: FilterForm = {
   selectedDate: null,
   tagSelectedList: [],
-  headLineInputValue: '',
+  headLineInputValue: null,
 }
 
 export const filterHomeModalSlice = createSlice({

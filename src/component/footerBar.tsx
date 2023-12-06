@@ -32,11 +32,11 @@ const FooterBar = () => {
   return (
     <>
       <FooterContainer>
-        <IconBox onClick={() => pageToggleHandler('홈')} isHome={isHome}>
+        <IconBox onClick={() => pageToggleHandler('홈')} ishome={isHome ? 'true' : 'false'}>
           <HomeIcon fill={isHome ? '#ffffff' : '#6D6D6D'} />
           <p>홈</p>
         </IconBox>
-        <IconBox onClick={() => pageToggleHandler('스크랩')} isHome={!isHome}>
+        <IconBox onClick={() => pageToggleHandler('스크랩')} ishome={!isHome ? 'true' : 'false'}>
           {!isHome ? <ScrapsOnIcon /> : <ScrapsOffIcon />}
           <p>스크랩</p>
         </IconBox>
@@ -59,9 +59,9 @@ const FooterContainer = styled.footer`
   height: 85px;
 `
 
-const IconBox = styled.div<{ isHome: boolean }>`
+const IconBox = styled.div<{ ishome: string }>`
   p {
-    color: ${({ isHome }) => (isHome ? '#ffffff' : '#6D6D6D')};
+    color: ${({ ishome }) => (ishome === 'true' ? '#ffffff' : '#6D6D6D')};
     font-size: 10px;
     font-weight: 600;
     line-height: 12px;

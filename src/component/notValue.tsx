@@ -6,7 +6,6 @@ interface NotValueProps {
   onClick?: () => void
 }
 
-import { useRouter } from 'next/router'
 import React, { SetStateAction, useEffect } from 'react'
 import { styled } from 'styled-components'
 import ScrapsBigIcon from '~/assets/icons/ico_scraps_big.svg'
@@ -15,7 +14,6 @@ const NotValue = ({ innerHeight, setInnerHeight, text, btnText, onClick }: NotVa
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const resizeHandler = () => {
-        console.log(window.innerHeight)
         setInnerHeight(window.innerHeight)
       }
 
@@ -29,7 +27,7 @@ const NotValue = ({ innerHeight, setInnerHeight, text, btnText, onClick }: NotVa
   }, [])
 
   return (
-    <NotScrapsContainer innerHeight={innerHeight}>
+    <NotScrapsContainer innerheight={innerHeight}>
       <ScrapsBigIcon width={27} height={36} />
       <p>{text}</p>
       {btnText && (
@@ -40,12 +38,12 @@ const NotValue = ({ innerHeight, setInnerHeight, text, btnText, onClick }: NotVa
     </NotScrapsContainer>
   )
 }
-const NotScrapsContainer = styled.div<{ innerHeight: number }>`
+const NotScrapsContainer = styled.div<{ innerheight: number }>`
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-  height: ${({ innerHeight }) => `${innerHeight}px` ?? '100%'};
+  height: ${({ innerheight }) => `${innerheight}px` ?? '100%'};
   background-color: #f0f1f4;
 
   p {

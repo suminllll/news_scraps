@@ -113,7 +113,6 @@ const FilterModal = ({ onClose, form, setForm, onSubmitHandler }: ModalProps) =>
                       <CalenderIcon fill="#6D6D6D" />
                     </div>
                   }
-                  minDate={new Date()}
                   selected={selectedDate}
                   onChange={(date) => setForm({ ...form, selectedDate: date })}
                 />

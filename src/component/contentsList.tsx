@@ -43,7 +43,7 @@ const ContentsList = ({ contentsList, isFilter }: ContentsListProps) => {
 
   useEffect(() => {
     //console.log('scraps_list', { scrapList })
-    // console.log({ contentsList })
+    //console.log({ contentsList })
   }, [scrapList, contentsList])
   return (
     <>
@@ -86,6 +86,7 @@ const ContentsContainer = styled.div`
   padding: 20px;
   background-color: #f0f1f4;
   margin-bottom: 85px;
+  margin-top: 60px;
 `
 
 const ContentsBox = styled.div`
@@ -104,7 +105,7 @@ const ContentsBox = styled.div`
 const ContentsTitleBox = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8%;
+  margin-bottom: 4%;
   overflow: hidden;
 `
 

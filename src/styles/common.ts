@@ -22,21 +22,20 @@ export const ButtonContainer = styled.div`
   gap: 7px;
 `
 
-export const activeFilterColor = {
-  color: '#82B0F4',
-  borderColor: '#82B0F4',
-  backColor: '#ffffff',
-}
-
-export const normalFilterColor = {
-  color: '#6D6D6D',
-  borderColor: '#c4c4c4',
-  backColor: '#ffffff',
-}
-
 export const Loading = styled.div`
   display: flex;
   justify-content: center;
   margin-top: -70px;
   margin-bottom: 110px;
+`
+
+export const Headers = styled.header`
+  height: 60px;
+  width: 100%;
+  padding: 13px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  background-color: #ffffff;
 `

@@ -1,7 +1,8 @@
 interface ButtonList {
   item: {
-    text: string
-    icon?: React.ReactNode | React.SVGProps<SVGSVGElement> | string
+    text: string | null
+    icon?: React.ReactNode
+    //| React.SVGProps<SVGSVGElement> | string
     value?: string
   }
   onClick: (text: string, value: string) => void
@@ -18,8 +19,8 @@ const Button = ({ item, onClick, buttonStyle }: ButtonList) => {
   return (
     <>
       <ButtonWrapper
-        onClick={() => onClick(item.text, item.value ? item.value : '')}
-        buttonStyle={buttonStyle}
+        onClick={() => onClick(item.text !== null ? item.text : '', item.value ? item.value : '')}
+        buttonstyle={buttonStyle}
         type="button"
       >
         {item.icon && <IconWrapper>{item.icon ? item.icon : ''}</IconWrapper>}
@@ -29,14 +30,14 @@ const Button = ({ item, onClick, buttonStyle }: ButtonList) => {
   )
 }
 
-const ButtonWrapper = styled.button<{ buttonStyle: ButtonList['buttonStyle'] }>`
+const ButtonWrapper = styled.button<{ buttonstyle: ButtonList['buttonStyle'] }>`
   display: flex;
-  color: ${({ buttonStyle }) => buttonStyle.color};
-  background-color: ${({ buttonStyle }) => buttonStyle.backColor};
+  color: ${({ buttonstyle }) => buttonstyle.color};
+  background-color: ${({ buttonstyle }) => buttonstyle.backColor};
   height: 34px;
   padding: 8px 11px 6px 11px;
   border-radius: 30px;
-  border: ${({ buttonStyle }) => buttonStyle.borderColor && `1px solid ${buttonStyle.borderColor}`};
+  border: ${({ buttonstyle }) => buttonstyle.borderColor && `1px solid ${buttonstyle.borderColor}`};
   max-width: 117px;
 
   span {
